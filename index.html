@@ -183,7 +183,7 @@
   }
 
   async function hämtaBokningarFrånGoogleSheets() {
-    const response = await fetch("https://script.google.com/macros/s/AKfycbxPuTjlM9pIxF7X3aYNXQZFiDUHuoXr_1yqsU9P1K4xxe35VAfk5Mr6sz8u-ft9qn7h/exec");
+    const response = await fetch("https://script.google.com/macros/s/AKfycbz9d4GW0UzbiyuTQkv2ZhO6FFjVSwNLgt7l22ZBd046pLcgEzZAhw2tUlr3BxvZOaS5/exec");
     const data = await response.json();
     bokningar = data;
   }
@@ -218,7 +218,7 @@
 
   async function sparaBokningTillGoogleSheets(id, lägenhetsnummer) {
     const [vecka, dag, tid] = id.split("-");
-    const response = await fetch("https://script.google.com/macros/s/AKfycbxPuTjlM9pIxF7X3aYNXQZFiDUHuoXr_1yqsU9P1K4xxe35VAfk5Mr6sz8u-ft9qn7h/exec", {
+    const response = await fetch("https://script.google.com/macros/s/AKfycbz9d4GW0UzbiyuTQkv2ZhO6FFjVSwNLgt7l22ZBd046pLcgEzZAhw2tUlr3BxvZOaS5/exec", {
       method: "POST",
       body: JSON.stringify({ id, lägenhetsnummer, vecka, dag, tid }),
       headers: { "Content-Type": "application/json" }
