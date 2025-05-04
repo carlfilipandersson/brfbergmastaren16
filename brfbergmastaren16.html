@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BRF Bergmästaren 16 - Tvättstugebokning</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #fffbe5; /* Ljusgul bakgrund */
+      color: #333;
+    }
+
+    header {
+      background-color: #7cb342; /* Grönt tema */
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 2em;
+    }
+
+    h2 {
+      color: #7cb342;
+    }
+
+    .week-nav {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .week-nav button {
+      background-color: #7cb342;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      margin: 5px;
+      font-size: 1.2em;
+    }
+
+    .week-nav button:hover {
+      background-color: #6a9c30;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+
+    td.available {
+      background-color: #e0ffe0;
+      cursor: pointer;
+    }
+
+    td.booked {
+      background-color: #ffdddd;
+      color: #555;
+      cursor: not-allowed;
+    }
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .modal-content {
+      background-color: #fefefe;
+      margin: 15% auto;
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%;
+      max-width: 400px;
+    }
+
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .close:hover,
+    .close:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    /* Kalenderlayout */
+    .calendar-table td {
+      vertical-align: top;
+      padding: 15px;
+      height: 120px;
+    }
+
+    .time-slot {
+      margin: 0px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+    }
+
+    .time-slot.booked {
+      background-color: #ffdddd;
+    }
+
+    .time-slot.available {
+      background-color: #e0ffe0;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>BRF Bergmästaren 16</h1>
+  <h2>Bokningskalender för Tvättstuga</h2>
+</header>
+
+<div class="week-nav">
+  <button onclick="ändraVecka(-1)">⬅ Föregående vecka</button>
+  <span id="veckorubrik">Vecka 1</span>
+  <button onclick="ändraVecka(1)">Nästa vecka ➡</button>
+</div>
+
+<table>
+  <thead>
+    <tr id="veckodagar">
+      <th>Tid</th>
+      <!-- Datum läggs in här -->
+    </tr>
+  </thead>
+  <tbody id="kalenderkropp"></tbody>
+</table>
+
+<!-- Modal -->
+<div id="bookingModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="stängModal()">&times;</span>
+    <h3>Boka tid</h3>
+    <label for="lägenhetsnummer">Lägenhetsnummer:</label>
+    <input type="text" id="lägenhetsnummer" placeholder="Ange ditt lägenhetsnummer">
+    <button onclick="bokaTid()">Boka</button>
+  </div>
+</div>
+
+<script>
+  let bokningar = {};
+  let currentWeek = 1;
+
+  const tidsIntervall = [
+    { tid: '08:00–12:00', id: 'v1' },
+    { tid: '12:00–16:00', id: 'v2' },
+    { tid: '16:00–20:00', id: 'v3' }
+  ];
+
+  const dagar = ['Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag', 'Söndag'];
+
+  // Hämta bokningar från localStorage
+  function hämtaBokningar() {
+    const bokningarFromStorage = localStorage.getItem("bokningar");
+    if (bokningarFromStorage) {
+      bokningar = JSON.parse(bokningarFromStorage);
+    }
+  }
+
+  // Spara bokningar till localStorage
+  function sparaBokningar() {
+    localStorage.setItem("bokningar", JSON.stringify(bokningar));
+  }
+
+  // Uppdatera kalendern baserat på aktuell vecka
+  function uppdateraKalender() {
+    const startOfWeek = getStartDateForWeek(currentWeek); 
+    const calendarBody = document.getElementById("kalenderkropp");
+    const veckodagarHeader = document.getElementById("veckodagar");
+    let calendarHTML = '';
+
+    // Skapa veckodagar + datum
+    let headerHTML = `<th>Tid</th>`;
+    for (let i = 0; i < 7; i++) {
+      const dayOfWeek = new Date(startOfWeek);
+      dayOfWeek.setDate(startOfWeek.getDate() + i);
+      const dayDate = `${dayOfWeek.getDate()}/${dayOfWeek.getMonth() + 1}`; // dag/månad
+      headerHTML += `<th>${dagar[i]}<br>${dayDate}</th>`;
+    }
+    veckodagarHeader.innerHTML = headerHTML;
+
+    // Skapa tider (08:00–12:00, 12:00–16:00, 16:00–20:00)
+    tidsIntervall.forEach(tid => {
+      calendarHTML += `<tr><td><strong>${tid.tid}</strong></td>`;
+      for (let i = 0; i < 7; i++) {
+        const dayOfWeek = new Date(startOfWeek);
+        dayOfWeek.setDate(startOfWeek.getDate() + i);
+        const cellId = `v${currentWeek}-${i + 1}-${tid.id}`;
+        const isBooked = bokningar[cellId];
+        const cellClass = isBooked ? 'booked' : 'available';
+        const cellContent = isBooked ? `Bokat av: ${bokningar[cellId]}` : "Ledigt";
+
+        // Lägg till celler för varje tid
+        calendarHTML += ` 
+          <td class="${cellClass}" onclick="visaModal('${cellId}')">
+            <div class="time-slot ${cellClass}">${cellContent}</div>
+          </td>
+        `;
+      }
+      calendarHTML += '</tr>';
+    });
+
+    calendarBody.innerHTML = calendarHTML;
+    document.getElementById("veckorubrik").innerText = `Vecka: ${currentWeek}`;
+  }
+
+  // Hämta startdatum för en vecka
+  function getStartDateForWeek(week) {
+    const currentDate = new Date();
+    const firstDayOfYear = new Date(currentDate.getFullYear(), 0, 1);
+    const daysToAdd = (week - 1) * 7 - firstDayOfYear.getDay() + 1;
+    const startDate = new Date(firstDayOfYear);
+    startDate.setDate(firstDayOfYear.getDate() + daysToAdd);
+    return startDate;
+  }
+
+  // Bläddra mellan veckorna
+  function ändraVecka(weekDiff) {
+    currentWeek += weekDiff;
+    if (currentWeek < 1) currentWeek = 1; // Begränsa till vecka 1
+    uppdateraKalender();
+  }
+
+  // Visa modal när man klickar på en ledig tid
+  function visaModal(id) {
+    document.getElementById("bookingModal").style.display = "block";
+    window.currentBookingId = id;
+  }
+
+  // Stäng modal
+  function stängModal() {
+    document.getElementById("bookingModal").style.display = "none";
+  }
+
+  // Boka tid
+  function bokaTid() {
+    const lägenhetsnummer = document.getElementById("lägenhetsnummer").value;
+    if (lägenhetsnummer && lägenhetsnummer.trim() !== "") {
+      bokningar[window.currentBookingId] = lägenhetsnummer.trim();
+      sparaBokningar();
+      alert("Tiden bokad! Lägenhetsnummer: " + lägenhetsnummer);
+      stängModal();
+      uppdateraKalender();
+    } else {
+      alert("Var vänlig ange ett giltigt lägenhetsnummer.");
+    }
+  }
+
+  // Ladda bokningar och uppdatera kalendern vid första sidladdning
+  window.onload = function() {
+    hämtaBokningar();
+    uppdateraKalender();
+  };
+</script>
+
+</body>
+</html>
