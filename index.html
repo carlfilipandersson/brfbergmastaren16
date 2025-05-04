@@ -177,7 +177,10 @@
 
   async function sparaBokningTillGoogleSheets(id, lägenhetsnummer) {
   const [vecka, dag, tid] = id.split("-");
-  const datumText = document.getElementById("veckodagar").children[dag].innerText.split("\n")[1];
+  const dagIndex = parseInt(dag) - 1;
+  const datumCell = document.getElementById("veckodagar").children[dagIndex + 1];
+  const datumText = datumCell.innerHTML.split("<br>")[1];
+
 
   const response = await fetch("https://script.google.com/macros/s/AKfycbxPuTjlM9pIxF7X3aYNXQZFiDUHuoXr_1yqsU9P1K4xxe35VAfk5Mr6sz8u-ft9qn7h/exec", {
     method: "POST",
