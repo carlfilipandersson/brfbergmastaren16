@@ -5,35 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BRF Bergmästaren 16 - Tvättstugebokning</title>
   <style>
+    /* CSS för design */
     body {
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
-      background-color: #fffbe5; /* Ljusgul bakgrund */
+      background-color: #fffbe5;
       color: #333;
     }
-
     header {
-      background-color: #7cb342; /* Grönt tema */
+      background-color: #7cb342;
       color: white;
       padding: 20px;
       text-align: center;
     }
-
     h1 {
       margin: 0;
       font-size: 2em;
     }
-
-    h2 {
-      color: #7cb342;
-    }
-
     .week-nav {
       text-align: center;
       margin-top: 20px;
     }
-
     .week-nav button {
       background-color: #7cb342;
       color: white;
@@ -43,35 +36,28 @@
       margin: 5px;
       font-size: 1.2em;
     }
-
     .week-nav button:hover {
       background-color: #6a9c30;
     }
-
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 20px;
     }
-
     th, td {
       border: 1px solid #ccc;
       padding: 10px;
       text-align: center;
     }
-
     td.available {
       background-color: #e0ffe0;
       cursor: pointer;
     }
-
     td.booked {
       background-color: #ffdddd;
       color: #555;
       cursor: not-allowed;
     }
-
-    /* Modal Styles */
     .modal {
       display: none;
       position: fixed;
@@ -82,7 +68,6 @@
       height: 100%;
       background-color: rgba(0, 0, 0, 0.4);
     }
-
     .modal-content {
       background-color: #fefefe;
       margin: 15% auto;
@@ -91,41 +76,17 @@
       width: 80%;
       max-width: 400px;
     }
-
     .close {
       color: #aaa;
       float: right;
       font-size: 28px;
       font-weight: bold;
     }
-
     .close:hover,
     .close:focus {
       color: black;
       text-decoration: none;
       cursor: pointer;
-    }
-
-    /* Kalenderlayout */
-    .calendar-table td {
-      vertical-align: top;
-      padding: 15px;
-      height: 120px;
-    }
-
-    .time-slot {
-      margin: 0px;
-      padding: 10px;
-      border: 1px solid #ccc;
-      cursor: pointer;
-    }
-
-    .time-slot.booked {
-      background-color: #ffdddd;
-    }
-
-    .time-slot.available {
-      background-color: #e0ffe0;
     }
   </style>
 </head>
@@ -146,7 +107,6 @@
   <thead>
     <tr id="veckodagar">
       <th>Tid</th>
-      <!-- Datum läggs in här -->
     </tr>
   </thead>
   <tbody id="kalenderkropp"></tbody>
@@ -166,7 +126,6 @@
 <script>
   let bokningar = {};
   let currentWeek = 1;
-
   const tidsIntervall = [
     { tid: '08:00–12:00', id: 'v1' },
     { tid: '12:00–16:00', id: 'v2' },
@@ -175,56 +134,22 @@
 
   const dagar = ['Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag', 'Söndag'];
 
-  async function sparaBokningTillGoogleSheets(id, lägenhetsnummer) {
-  const [vecka, dag, tid] = id.split("-");
-  const dagIndex = parseInt(dag) - 1;
-  const datumCell = document.getElementById("veckodagar").children[dagIndex + 1];
-  const datumText = datumCell.innerHTML.split("<br>")[1];
-
-
-  const response = await fetch("https://script.google.com/macros/s/AKfycbxPuTjlM9pIxF7X3aYNXQZFiDUHuoXr_1yqsU9P1K4xxe35VAfk5Mr6sz8u-ft9qn7h/exec", {
-    method: "POST",
-    body: JSON.stringify({
-      id,
-      lägenhetsnummer,
-      vecka,
-      dag,
-      tid,
-      datum: datumText
-    }),
-    headers: {
-      "Content-Type": "application/json"
-    }
-  });
-
-  const result = await response.json();
-  console.log(result);
-}
-
-  async function hämtaBokningarFrånGoogleSheets() {
-  const response = await fetch("https://script.google.com/macros/s/AKfycbxPuTjlM9pIxF7X3aYNXQZFiDUHuoXr_1yqsU9P1K4xxe35VAfk5Mr6sz8u-ft9qn7h/exec");
-  const data = await response.json();
-  bokningar = data;
-}
-  
-  // Uppdatera kalendern baserat på aktuell vecka
-  function uppdateraKalender() {
+  // Uppdatera kalendern
+  async function uppdateraKalender() {
     const startOfWeek = getStartDateForWeek(currentWeek); 
     const calendarBody = document.getElementById("kalenderkropp");
     const veckodagarHeader = document.getElementById("veckodagar");
     let calendarHTML = '';
 
-    // Skapa veckodagar + datum
     let headerHTML = `<th>Tid</th>`;
     for (let i = 0; i < 7; i++) {
       const dayOfWeek = new Date(startOfWeek);
       dayOfWeek.setDate(startOfWeek.getDate() + i);
-      const dayDate = `${dayOfWeek.getDate()}/${dayOfWeek.getMonth() + 1}`; // dag/månad
+      const dayDate = `${dayOfWeek.getDate()}/${dayOfWeek.getMonth() + 1}`;
       headerHTML += `<th>${dagar[i]}<br>${dayDate}</th>`;
     }
     veckodagarHeader.innerHTML = headerHTML;
 
-    // Skapa tider (08:00–12:00, 12:00–16:00, 16:00–20:00)
     tidsIntervall.forEach(tid => {
       calendarHTML += `<tr><td><strong>${tid.tid}</strong></td>`;
       for (let i = 0; i < 7; i++) {
@@ -235,8 +160,7 @@
         const cellClass = isBooked ? 'booked' : 'available';
         const cellContent = isBooked ? `Bokat av: ${bokningar[cellId]}` : "Ledigt";
 
-        // Lägg till celler för varje tid
-        calendarHTML += ` 
+        calendarHTML += `
           <td class="${cellClass}" onclick="visaModal('${cellId}')">
             <div class="time-slot ${cellClass}">${cellContent}</div>
           </td>
@@ -249,7 +173,6 @@
     document.getElementById("veckorubrik").innerText = `Vecka: ${currentWeek}`;
   }
 
-  // Hämta startdatum för en vecka
   function getStartDateForWeek(week) {
     const currentDate = new Date();
     const firstDayOfYear = new Date(currentDate.getFullYear(), 0, 1);
@@ -259,44 +182,55 @@
     return startDate;
   }
 
-  // Bläddra mellan veckorna
+  async function hämtaBokningarFrånGoogleSheets() {
+    const response = await fetch("https://script.google.com/macros/s/YOUR_WEB_APP_URL/exec");
+    const data = await response.json();
+    bokningar = data;
+  }
+
   function ändraVecka(weekDiff) {
     currentWeek += weekDiff;
-    if (currentWeek < 1) currentWeek = 1; // Begränsa till vecka 1
+    if (currentWeek < 1) currentWeek = 1;
     uppdateraKalender();
   }
 
-  // Visa modal när man klickar på en ledig tid
   function visaModal(id) {
     document.getElementById("bookingModal").style.display = "block";
     window.currentBookingId = id;
   }
 
-  // Stäng modal
   function stängModal() {
     document.getElementById("bookingModal").style.display = "none";
   }
 
-  // Boka tid
   async function bokaTid() {
-  const lägenhetsnummer = document.getElementById("lägenhetsnummer").value;
-  if (lägenhetsnummer && lägenhetsnummer.trim() !== "") {
-    bokningar[window.currentBookingId] = lägenhetsnummer.trim();
-    await sparaBokningTillGoogleSheets(window.currentBookingId, lägenhetsnummer.trim());
-    alert("Tiden bokad!");
-    stängModal();
-    uppdateraKalender();
-  } else {
-    alert("Var vänlig ange ett giltigt lägenhetsnummer.");
+    const lägenhetsnummer = document.getElementById("lägenhetsnummer").value;
+    if (lägenhetsnummer) {
+      bokningar[window.currentBookingId] = lägenhetsnummer.trim();
+      await sparaBokningTillGoogleSheets(window.currentBookingId, lägenhetsnummer.trim());
+      alert("Tiden bokad!");
+      stängModal();
+      uppdateraKalender();
+    } else {
+      alert("Var vänlig ange ett giltigt lägenhetsnummer.");
+    }
   }
-}
 
-  // Ladda bokningar och uppdatera kalendern vid första sidladdning
+  async function sparaBokningTillGoogleSheets(id, lägenhetsnummer) {
+    const [vecka, dag, tid] = id.split("-");
+    const response = await fetch("https://script.google.com/macros/s/YOUR_WEB_APP_URL/exec", {
+      method: "POST",
+      body: JSON.stringify({ id, lägenhetsnummer, vecka, dag, tid }),
+      headers: { "Content-Type": "application/json" }
+    });
+    const result = await response.json();
+    console.log(result);
+  }
+
   window.onload = async function() {
-  await hämtaBokningarFrånGoogleSheets(); // hämta från Sheets
-  uppdateraKalender();
-};
-
+    await hämtaBokningarFrånGoogleSheets();
+    uppdateraKalender();
+  };
 </script>
 
 </body>
