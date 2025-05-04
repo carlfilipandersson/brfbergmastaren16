@@ -175,19 +175,35 @@
 
   const dagar = ['Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag', 'Söndag'];
 
-  // Hämta bokningar från localStorage
-  function hämtaBokningar() {
-    const bokningarFromStorage = localStorage.getItem("bokningar");
-    if (bokningarFromStorage) {
-      bokningar = JSON.parse(bokningarFromStorage);
+  async function sparaBokningTillGoogleSheets(id, lägenhetsnummer) {
+  const [vecka, dag, tid] = id.split("-");
+  const datumText = document.getElementById("veckodagar").children[dag].innerText.split("\n")[1];
+
+  const response = await fetch("https://script.google.com/macros/s/AKfycbxPuTjlM9pIxF7X3aYNXQZFiDUHuoXr_1yqsU9P1K4xxe35VAfk5Mr6sz8u-ft9qn7h/exec", {
+    method: "POST",
+    body: JSON.stringify({
+      id,
+      lägenhetsnummer,
+      vecka,
+      dag,
+      tid,
+      datum: datumText
+    }),
+    headers: {
+      "Content-Type": "application/json"
     }
-  }
+  });
 
-  // Spara bokningar till localStorage
-  function sparaBokningar() {
-    localStorage.setItem("bokningar", JSON.stringify(bokningar));
-  }
+  const result = await response.json();
+  console.log(result);
+}
 
+  async function hämtaBokningarFrånGoogleSheets() {
+  const response = await fetch(https://script.google.com/macros/s/AKfycbxPuTjlM9pIxF7X3aYNXQZFiDUHuoXr_1yqsU9P1K4xxe35VAfk5Mr6sz8u-ft9qn7h/exec);
+  const data = await response.json();
+  bokningar = data;
+}
+  
   // Uppdatera kalendern baserat på aktuell vecka
   function uppdateraKalender() {
     const startOfWeek = getStartDateForWeek(currentWeek); 
@@ -259,24 +275,26 @@
   }
 
   // Boka tid
-  function bokaTid() {
-    const lägenhetsnummer = document.getElementById("lägenhetsnummer").value;
-    if (lägenhetsnummer && lägenhetsnummer.trim() !== "") {
-      bokningar[window.currentBookingId] = lägenhetsnummer.trim();
-      sparaBokningar();
-      alert("Tiden bokad! Lägenhetsnummer: " + lägenhetsnummer);
-      stängModal();
-      uppdateraKalender();
-    } else {
-      alert("Var vänlig ange ett giltigt lägenhetsnummer.");
-    }
+  async function bokaTid() {
+  const lägenhetsnummer = document.getElementById("lägenhetsnummer").value;
+  if (lägenhetsnummer && lägenhetsnummer.trim() !== "") {
+    bokningar[window.currentBookingId] = lägenhetsnummer.trim();
+    await sparaBokningTillGoogleSheets(window.currentBookingId, lägenhetsnummer.trim());
+    sparaBokningar(); // sparar även lokalt
+    alert("Tiden bokad!");
+    stängModal();
+    uppdateraKalender();
+  } else {
+    alert("Var vänlig ange ett giltigt lägenhetsnummer.");
   }
+}
 
   // Ladda bokningar och uppdatera kalendern vid första sidladdning
-  window.onload = function() {
-    hämtaBokningar();
-    uppdateraKalender();
-  };
+  window.onload = async function() {
+  await hämtaBokningarFrånGoogleSheets(); // hämta från Sheets
+  uppdateraKalender();
+};
+
 </script>
 
 </body>
